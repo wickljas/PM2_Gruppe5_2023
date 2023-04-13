@@ -15,8 +15,9 @@ const float counts_per_turn = 20.0f * 78.125f; // define counts per turn at gear
 const float kn = 180.0f / 12.0f;               // define motor constant in RPM/V
 const float k_gear = 100.0f / 78.125f;         // define additional ratio in case you are using a dc motor with a different gear box, e.g. 100:1
 const float kp = 0.2f;                         // define custom kp, this is the default speed controller gain for gear box 78.125:1
-const float max_speed_rps = 0.5f;
+const float max_speed_rps = 0.25f;
 
+const float distanceFromStart = 1.0f;
 //state variables
 bool execute_main = false;
 bool reset_all = false;
@@ -25,8 +26,9 @@ bool reset_all = false;
 DebounceIn user_button(PC_13); //Creates interrupt object to evaluate user button.
 void user_button_pressed();
 
-
+DebounceIn test_button(D15);
 void test_button_pressed();
+bool testactive = false;
 
 const int TREADSTER_STATE_INIT     = 0;
 const int TREADSTER_STATE_FORWARD  = 1;
@@ -51,10 +53,10 @@ int main()
     printf("Setup\n");
     //attach user_button_pressed to the user button, so that it executes when pressed on falling edge.
     user_button.fall(&user_button_pressed);
-
+    test_button.fall(&test_button_pressed);
 
     //main loop gets executed every 50 ms.
-    const int main_task_period_ms = 200;
+    const int main_task_period_ms = 50;
     Timer main_task_timer;
 
 
@@ -65,14 +67,16 @@ int main()
     DigitalIn mechanical_button(pinButton);
     mechanical_button.mode(PullUp);
 
-    DigitalIn test_button(D15);
-    test_button.mode(PullDown);
+    // DigitalIn test_button(D15);
+    //test_button.mode(PullDown);
+
+    
     //Create digitalout object to enable DC-Motors
     DigitalOut enable_motors(pinEnableMotors);
 
-    FastPWM pwm_left(pinM1);  //Drives Left Track
-    FastPWM pwm_right(pinM2);  //Drives Right Track
-    FastPWM pwm_arms(pinM3);  //Drives Arms
+    FastPWM pwm_left(pinM2);  //Drives Left Track
+    FastPWM pwm_right(pinM3);  //Drives Right Track
+    FastPWM pwm_arms(pinM1);  //Drives Arms
 
     //Create Encoder Objects of the DC Motors.
     EncoderCounter encoder_left(PA_6, PC_7);
@@ -84,9 +88,14 @@ int main()
     SpeedController speedController_left(counts_per_turn, kn, max_voltage, pwm_left, encoder_left);
     SpeedController speedController_right(counts_per_turn, kn, max_voltage, pwm_right, encoder_right);
 
-    PositionController posController_left(counts_per_turn * k_gear, kn / k_gear, max_voltage, pwm_left, encoder_left);
-    PositionController posController_right(counts_per_turn * k_gear, kn / k_gear, max_voltage, pwm_right, encoder_right);
+    
+    //PositionController posController_left(counts_per_turn * k_gear, kn / k_gear, max_voltage, pwm_left, encoder_left);
+    //PositionController posController_right(counts_per_turn * k_gear, kn / k_gear, max_voltage, pwm_right, encoder_right);
     PositionController posController_arms(counts_per_turn * k_gear, kn / k_gear, max_voltage, pwm_arms, encoder_arms);
+   
+    //posController_left.setSpeedCntrlGain(kp * k_gear);   // adjust internal speed controller gain, this is just an example
+    //posController_left.setMaxVelocityRPS(max_speed_rps); //
+   
 
     main_task_timer.start();
     printf("Setup Complete \n");
@@ -96,32 +105,57 @@ int main()
     while(true) {
         main_task_timer.reset();
 
-
+/*      
         if (!test_button.read()) {
             test_button_pressed();
         }
-
+*/
+        if (testactive) {
+            printf("Current Treadster State: %d\n", treadster_state_actual);
+            testactive = !testactive;
+        }
         //Starts main Sequence of Treadster.
         if (execute_main) {
-            printf("executing main");
+           
             switch (treadster_state_actual) {
                 //Insert main code for the Treadster here.
                 case TREADSTER_STATE_INIT:
                     break;
 
                 case TREADSTER_STATE_FORWARD:
+                   // posController_left.setDesiredRotation(distanceFromStart);
+                    printf("We are here");
+                    enable_motors = 1;
+                    speedController_left.setDesiredSpeedRPS(-0.25f);
+                    speedController_right.setDesiredSpeedRPS(0.25f);
+                    
                     break;
                 
                 case TREADSTER_STATE_BACKWARD:
+                   // posController_left.setDesiredRotation(-distanceFromStart);
+                    speedController_left.setDesiredSpeedRPS(0.25f);
+                    speedController_right.setDesiredSpeedRPS(-0.25f);
                     break;
 
                 case TREADSTER_STATE_STOP:
+                    speedController_left.setDesiredSpeedRPS(0.0f);
+                    speedController_right.setDesiredSpeedRPS(0.0f);
                     break;
                 
                 case TREADSTER_STATE_CLIMBING:
+
                     break;
                 
                 case TREADSTER_STATE_PUSHUP:
+    /*
+                    speedController_left.setDesiredSpeedRPS(0.0f);
+                    speedController_right.setDesiredSpeedRPS(0.0f);
+
+                    posController_arms.setSpeedCntrlGain(kp * k_gear);
+                    posController_arms.setMaxVelocityRPS(max_speed_rps);
+
+                    posController_arms.setDesiredRotation(0.3f);
+                    */
                     break;
                 
                 case TREADSTER_STATE_ROTATING:
@@ -143,6 +177,10 @@ int main()
 void user_button_pressed() {
     //Toggle execute_main state
     execute_main = !execute_main;
+    //printf("User Button Pressed\n");
+
+    //printf("Current Treadster State: %d\n", treadster_state_actual);
+
     //Reset all the variables that may have changed in the last run.
     if (execute_main)
         reset_all = true;
@@ -152,11 +190,12 @@ void user_button_pressed() {
 void test_button_pressed() {
     //execute_main = true;
 
+    testactive = true;
     board_led = true;
     board_led = false;
 
     treadster_state_actual = (treadster_state_actual == 6) ? 0 : (treadster_state_actual + 1);
-    printf("Current Treadster State: %d\n", treadster_state_actual);
+    //printf("Current Treadster State: %d\n", treadster_state_actual);
 
    
 }
