@@ -17,10 +17,9 @@ const float k_gear = 100.0f / 78.125f;         // define additional ratio in cas
 const float kp = 0.2f;                         // define custom kp, this is the default speed controller gain for gear box 78.125:1
 const float max_speed_rps = 1.0f;
 
-const float k_gear2 = 100.0f / 156.0f;
-const float counts_per_turn2 = 20.0f * 156.0f;
+const float k_gear2 = 156.0f / 78.125f;
 
-const float distanceFromStart = 1.0f;
+const float distanceFromStart = 0.0f;
 //state variables
 bool execute_main = false;
 bool reset_all = false;
@@ -37,9 +36,8 @@ const int TREADSTER_STATE_INIT     = 0;
 const int TREADSTER_STATE_FORWARD  = 1;
 const int TREADSTER_STATE_BACKWARD = 2;
 const int TREADSTER_STATE_STOP     = 3;
-const int TREADSTER_STATE_CLIMBING = 4;
-const int TREADSTER_STATE_PUSHUP   = 5;
-const int TREADSTER_STATE_ROTATING = 6;
+const int TREADSTER_STATE_PUSHUP   = 4;
+const int TREADSTER_STATE_CLIMBING = 5;
 int treadster_state_actual = TREADSTER_STATE_INIT;
 
 
@@ -65,17 +63,11 @@ int main()
     Timer main_task_timer;
 
     board_led.write(0);
-
-
-    
+ 
     //Create an DigitalIn Object for the mechanical button, which triggers when Treadster crosses the wall.
     DigitalIn mechanical_button(pinButton);
     mechanical_button.mode(PullUp);
 
-    // DigitalIn test_button(D15);
-    //test_button.mode(PullDown);
-
-    
     //Create digitalout object to enable DC-Motors
     DigitalOut enable_motors(pinEnableMotors);
 
@@ -89,22 +81,14 @@ int main()
     EncoderCounter M3(PA_0, PA_1);
 
     //Create Speed Controller and Position Controller Objects for the DC motors. 
-    //Left and Right Motors should have both a speed and a position configuration, since they need to switch between those two different control algorithms.
     SpeedController speedController_left(counts_per_turn, kn, max_voltage, pwm_left, M2);
     SpeedController speedController_right(counts_per_turn, kn, max_voltage, pwm_right, M3);
 
     
-    //PositionController posController_left(counts_per_turn * k_gear, kn / k_gear, max_voltage, pwm_left, encoder_left);
-    //PositionController posController_right(counts_per_turn * k_gear, kn / k_gear, max_voltage, pwm_right, encoder_right);
-    
-
-    PositionController posController_arms(counts_per_turn2 * k_gear2, kn / k_gear2, max_voltage, pwm_arms, M1);
-    posController_arms.setSpeedCntrlGain(0.05 * k_gear2);
+    PositionController posController_arms(counts_per_turn * k_gear2, kn / k_gear2, max_voltage, pwm_arms, M1);
+    posController_arms.setSpeedCntrlGain(0.15 * k_gear2);
     posController_arms.setMaxVelocityRPS(max_speed_rps);
 
-    //posController_left.setSpeedCntrlGain(kp * k_gear);   // adjust internal speed controller gain, this is just an example
-    //posController_left.setMaxVelocityRPS(max_speed_rps); //
-   
 
     main_task_timer.start();
     printf("Setup Complete \n");
@@ -115,11 +99,6 @@ int main()
         main_task_timer.reset();
 
         
-/*      
-        if (!test_button.read()) {
-            test_button_pressed();
-        }
-*/
         if (testactive) {
             printf("Current Treadster State: %d\n", treadster_state_actual);
             testactive = !testactive;
@@ -159,10 +138,7 @@ int main()
                     speedController_right.setDesiredSpeedRPS(0.0f);
                     break;
                 
-                case TREADSTER_STATE_CLIMBING:
-                    
-                    break;
-                
+
                 case TREADSTER_STATE_PUSHUP:
     
                     speedController_left.setDesiredSpeedRPS(0.0f);
@@ -176,7 +152,7 @@ int main()
 
                     break;
                 
-                case TREADSTER_STATE_ROTATING:
+                case TREADSTER_STATE_CLIMBING:
                     speedController_left.setDesiredSpeedRPS(0.5f);
                     speedController_right.setDesiredSpeedRPS(-0.5f);
                     
