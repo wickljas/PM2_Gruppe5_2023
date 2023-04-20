@@ -17,6 +17,9 @@ const float k_gear = 100.0f / 78.125f;         // define additional ratio in cas
 const float kp = 0.2f;                         // define custom kp, this is the default speed controller gain for gear box 78.125:1
 const float max_speed_rps = 1.0f;
 
+const float k_gear2 = 100.0f / 156.0f;
+const float counts_per_turn2 = 20.0f * 156.0f;
+
 const float distanceFromStart = 1.0f;
 //state variables
 bool execute_main = false;
@@ -94,8 +97,9 @@ int main()
     //PositionController posController_left(counts_per_turn * k_gear, kn / k_gear, max_voltage, pwm_left, encoder_left);
     //PositionController posController_right(counts_per_turn * k_gear, kn / k_gear, max_voltage, pwm_right, encoder_right);
     
-    PositionController posController_arms(counts_per_turn * k_gear, kn / k_gear, max_voltage, pwm_arms, M1);
-    posController_arms.setSpeedCntrlGain(kp * k_gear);
+
+    PositionController posController_arms(counts_per_turn2 * k_gear2, kn / k_gear2, max_voltage, pwm_arms, M1);
+    posController_arms.setSpeedCntrlGain(0.05 * k_gear2);
     posController_arms.setMaxVelocityRPS(max_speed_rps);
 
     //posController_left.setSpeedCntrlGain(kp * k_gear);   // adjust internal speed controller gain, this is just an example
@@ -135,17 +139,18 @@ int main()
                    // posController_left.setDesiredRotation(distanceFromStart);
                     printf(" Going forward ");
                     enable_motors = 1;
-                    speedController_left.setDesiredSpeedRPS(-0.25f);
-                    speedController_right.setDesiredSpeedRPS(0.25f);
-                    posController_arms.setDesiredRotation(start_arms_rotation);
+                    speedController_left.setDesiredSpeedRPS(1.0f);
+                    speedController_right.setDesiredSpeedRPS(-1.0f);
+                    posController_arms.setDesiredRotation(0.0f);
+                    //printf("%f", start_arms_rotation);
                     
                     break;
                 
                 case TREADSTER_STATE_BACKWARD:
                    // posController_left.setDesiredRotation(-distanceFromStart);
                     printf(" Going Backwards ");
-                    speedController_left.setDesiredSpeedRPS(0.25f);
-                    speedController_right.setDesiredSpeedRPS(-0.25f);
+                    speedController_left.setDesiredSpeedRPS(-1.0f);
+                    speedController_right.setDesiredSpeedRPS(1.0f);
                     break;
 
                 case TREADSTER_STATE_STOP:
@@ -164,19 +169,19 @@ int main()
                     speedController_right.setDesiredSpeedRPS(0.0f);
 
                     posController_arms.setSpeedCntrlGain(kp * k_gear);
-                    
+                    posController_arms.setSpeedCntrlGain(0.5f);
 
-                    posController_arms.setDesiredRotation(start_arms_rotation-2.0f);
-                    
+                    posController_arms.setDesiredRotation(-0.5f);
+                    printf("%f \n", posController_arms.getRotation());
 
                     break;
                 
                 case TREADSTER_STATE_ROTATING:
-                    speedController_left.setDesiredSpeedRPS(-0.25f);
-                    speedController_right.setDesiredSpeedRPS(0.25f);
+                    speedController_left.setDesiredSpeedRPS(0.5f);
+                    speedController_right.setDesiredSpeedRPS(-0.5f);
                     
                     posController_arms.setMaxVelocityRPS(0.5f);
-                    posController_arms.setDesiredRotation(start_arms_rotation-10.0f);
+                    posController_arms.setDesiredRotation(0.5f);
                     break;
 
                 default: break;
@@ -194,7 +199,7 @@ int main()
 
 void user_button_pressed() {
     //Toggle execute_main state
-    execute_main = !execute_main;
+    execute_main = true;
     //printf("User Button Pressed\n");
 
     if (execute_main) {
@@ -205,8 +210,11 @@ void user_button_pressed() {
     //printf("Current Treadster State: %d\n", treadster_state_actual);
 
     //Reset all the variables that may have changed in the last run.
-    if (execute_main)
+     if (execute_main)
         reset_all = true;
+
+    treadster_state_actual = (treadster_state_actual == 6) ? 0 : (treadster_state_actual + 1);
+
 }
 
 //test function to evaluate the different states of the treadster, using a mechanical button.
