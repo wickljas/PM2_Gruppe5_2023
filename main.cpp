@@ -30,18 +30,17 @@ bool reset_all = false;
 DebounceIn user_button(PC_13); //Creates interrupt object to evaluate user button.
 void user_button_pressed();
 
+/*
 DebounceIn small_button_front(PB_2);
 void small_button_front_pressed();
 int buttonFrontPressed = 0;
 
-DebounceIn small_button_back(PC_8);
+
+DebounceIn small_button_back(PC_9);
 void small_button_back_pressed();
 int buttonBackPressed = 0;
 
-DebounceIn test_button(D15);
-void test_button_pressed();
-bool testactive = false;
-
+*/
 const int TREADSTER_STATE_INIT     = 0;
 const int TREADSTER_STATE_FORWARD  = 1;
 const int TREADSTER_STATE_PUSHUP   = 2;
@@ -51,6 +50,7 @@ const int TREADSTER_STATE_FORWARD_MINI2 = 5;
 const int TREADSTER_STATE_BACKWARD = 6;
 const int TREADSTER_STATE_FORWARD_MINI3 = 7;
 const int TREADSTER_STATE_STOP     = 8;
+const int TREADSTER_STATE_FORWARD_TINY = 9;
 
 
 
@@ -58,7 +58,7 @@ const int TREADSTER_STATE_STOP     = 8;
 int treadster_state_actual = TREADSTER_STATE_INIT;
 
 int counter = 0;
-
+int stop = 0;
 
 float start_arms_rotation = 0.0f;
 // led on nucleoboard, for task informations.
@@ -75,21 +75,25 @@ int main()
     printf("Setup\n");
     //attach user_button_pressed to the user button, so that it executes when pressed on falling edge.
     user_button.fall(&user_button_pressed);
-    test_button.fall(&test_button_pressed);
 
-    small_button_front.rise(&small_button_front_pressed);
-    small_button_back.rise(&small_button_back_pressed);
+
+   // small_button_front.fall(&small_button_front_pressed);
+   // small_button_back.fall(&small_button_back_pressed);
 
     //main loop gets executed every 50 ms.
-    const int main_task_period_ms = 50;
+    const int main_task_period_ms = 20;
     Timer main_task_timer;
 
     board_led.write(0);
  
     //Create an DigitalIn Object for the mechanical button. Detects front wall.
-    DigitalIn mechanical_button(PC_9);
-    mechanical_button.mode(PullUp);
-
+ 
+    /*
+    DigitalIn small_button_front(PB_2);
+    DigitalIn small_button_back(PC_8);
+    small_button_back.mode(PullDown);
+    small_button_back.mode(PullUp);
+    */
     //Create digitalout object to enable DC-Motors
     DigitalOut enable_motors(pinEnableMotors);
 
@@ -120,11 +124,17 @@ int main()
     while(true) {
         main_task_timer.reset();
 
-        
-        if (testactive) {
-            printf("Current Treadster State: %d\n", treadster_state_actual);
-            testactive = !testactive;
+        /*
+        if (small_button_back.read()) {
+            printf("back button pressed\n");
         }
+        
+        if (small_button_front.read()){
+            printf("front button pressed");
+        }
+        */
+
+
         //Starts main Sequence of Treadster.
         if (execute_main) {
            
@@ -144,6 +154,14 @@ int main()
                     speedController_right.setDesiredSpeedRPS(-1.0f);
                     posController_arms.setDesiredRotation(0.0f);
 
+
+                    if (counter <= 350) {  //140
+                    counter = counter + 1;
+                    }
+                    else {
+                    counter = 0;
+                     treadster_state_actual = TREADSTER_STATE_PUSHUP;     
+                    }
                     //printf("%f", start_arms_rotation);
                     
                     break;
@@ -157,10 +175,10 @@ int main()
                     posController_arms.setSpeedCntrlGain(kp * k_gear);
                     posController_arms.setSpeedCntrlGain(0.4f);
 
-                    posController_arms.setDesiredRotation(4.0f);
+                    posController_arms.setDesiredRotation(3.5f);
                     printf("%f \n", posController_arms.getRotation());
 
-                    if (posController_arms.getRotation() == 4.0f)
+                    if (posController_arms.getRotation() >= 3.3f)
                         treadster_state_actual = TREADSTER_STATE_FORWARD_MINI;
 
                     break;
@@ -173,12 +191,13 @@ int main()
                     speedController_right.setDesiredSpeedRPS(-1.0f);
                     posController_arms.setDesiredRotation(4.0f);
 
-                    if (counter <= 60) {
+                    if (counter <= 150) { //60
                     counter = counter + 1;
                     }
                     else {
                     counter = 0;
-                     treadster_state_actual = TREADSTER_STATE_CLIMBING;                    }
+                     treadster_state_actual = TREADSTER_STATE_CLIMBING;     
+                    }
                     //printf("%f", start_arms_rotation);
                     
                     break;
@@ -190,30 +209,57 @@ int main()
                     posController_arms.setSpeedCntrlGain(kp * k_gear);
                     posController_arms.setSpeedCntrlGain(0.4f);
 
-                    posController_arms.setDesiredRotation(-16.0f);
+                    posController_arms.setDesiredRotation(-13.0f);
 
-                    if (posController_arms.getRotation() == -16.0f)
-                        treadster_state_actual = TREADSTER_STATE_FORWARD_MINI2;
+                    if (posController_arms.getRotation() <= -12.8f)
+                        treadster_state_actual = TREADSTER_STATE_FORWARD_TINY;
 
                     break;
+
+                case TREADSTER_STATE_FORWARD_TINY:
+
+                    
+                    speedController_left.setDesiredSpeedRPS(1.0f);
+                    speedController_right.setDesiredSpeedRPS(-1.0f);
+
+                    if (counter <= 200) {
+                    counter = counter + 1;
+                    }
+                    else {
+                    counter = 0;
+                     treadster_state_actual = TREADSTER_STATE_FORWARD_MINI2;     
+                    } 
+                    break;                   
 
 
                 case TREADSTER_STATE_FORWARD_MINI2:
 
                     printf(" Going forward ");
                     enable_motors = 1;
-                    speedController_left.setDesiredSpeedRPS(1.0f);
-                    speedController_right.setDesiredSpeedRPS(-1.0f);
 
 
-                    posController_arms.setDesiredRotation(-5.0f);
 
-                    if (counter < 100) {
+                    if (stop == 0) {
+                        speedController_left.setDesiredSpeedRPS(1.0f);
+                        speedController_right.setDesiredSpeedRPS(-1.0f); 
+                    }
+
+
+                    posController_arms.setSpeedCntrlGain(0.3f);
+                    posController_arms.setDesiredRotation(0.0f);
+
+                    if (counter <= 150  && stop == 0) {  //100
                     counter++;
                     }
                     else {
+                    stop = 1;
                     counter = 0;
-                    treadster_state_actual = TREADSTER_STATE_BACKWARD;
+                    speedController_left.setDesiredSpeedRPS(0.0f);
+                    speedController_right.setDesiredSpeedRPS(0.0f);
+                    }
+
+                    if (posController_arms.getRotation() >= -0.2f) {
+                        treadster_state_actual = TREADSTER_STATE_BACKWARD;
                     }
                     //printf("%f", start_arms_rotation);
                     
@@ -225,8 +271,14 @@ int main()
                     printf(" Going Backwards ");
                     speedController_left.setDesiredSpeedRPS(-1.0f);
                     speedController_right.setDesiredSpeedRPS(1.0f);
-                    posController_arms.setDesiredRotation(-5.0f);
 
+                    if (counter <= 100) { //60
+                    counter = counter + 1;
+                    }
+                    else {
+                    counter = 0;
+                     treadster_state_actual = TREADSTER_STATE_FORWARD_MINI3;     
+                    }
                     
                     break;
 
@@ -238,9 +290,9 @@ int main()
                     enable_motors = 1;
                     speedController_left.setDesiredSpeedRPS(1.0f);
                     speedController_right.setDesiredSpeedRPS(-1.0f);
-                    posController_arms.setDesiredRotation(-5.0f);
 
-                    if (counter < 300) {
+
+                    if (counter < 300) { //300
                     counter = counter + 1;
                     }
                     else {
@@ -290,12 +342,16 @@ void user_button_pressed() {
 
 }
 
+void test_button_pressed() {
+
+}
 
 void mechanical_button_pressed() {
 
     treadster_state_actual = (treadster_state_actual == 9) ? 0 : (treadster_state_actual + 1);
 } 
 
+/*
 void small_button_back_pressed() {
     printf("Button back pressed");
     buttonBackPressed = 1;
@@ -305,3 +361,4 @@ void small_button_front_pressed() {
     printf("Button Front Pressed");
     buttonFrontPressed = 1;
 }
+*/
