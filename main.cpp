@@ -150,12 +150,12 @@ int main()
                    // posController_left.setDesiredRotation(distanceFromStart);
                     printf(" Going forward ");
                     enable_motors = 1;
-                    speedController_left.setDesiredSpeedRPS(1.0f);
-                    speedController_right.setDesiredSpeedRPS(-1.0f);
+                    speedController_left.setDesiredSpeedRPS(1.5f);
+                    speedController_right.setDesiredSpeedRPS(-1.5f);
                     posController_arms.setDesiredRotation(0.0f);
 
 
-                    if (counter <= 350) {  //140
+                    if (counter <= 260) {  //140
                     counter = counter + 1;
                     }
                     else {
@@ -207,7 +207,7 @@ int main()
                     speedController_right.setDesiredSpeedRPS(-0.0f);
                     
                     posController_arms.setSpeedCntrlGain(kp * k_gear);
-                    posController_arms.setSpeedCntrlGain(0.4f);
+                    posController_arms.setSpeedCntrlGain(0.6f);
 
                     posController_arms.setDesiredRotation(-13.0f);
 
@@ -219,10 +219,10 @@ int main()
                 case TREADSTER_STATE_FORWARD_TINY:
 
                     
-                    speedController_left.setDesiredSpeedRPS(1.0f);
-                    speedController_right.setDesiredSpeedRPS(-1.0f);
+                    speedController_left.setDesiredSpeedRPS(0.8f);
+                    speedController_right.setDesiredSpeedRPS(-0.8f);
 
-                    if (counter <= 200) {
+                    if (counter <= 150) {
                     counter = counter + 1;
                     }
                     else {
@@ -240,25 +240,35 @@ int main()
 
 
                     if (stop == 0) {
-                        speedController_left.setDesiredSpeedRPS(1.0f);
-                        speedController_right.setDesiredSpeedRPS(-1.0f); 
+                        speedController_left.setDesiredSpeedRPS(0.8f);
+                        speedController_right.setDesiredSpeedRPS(-0.8f); 
                     }
 
 
-                    posController_arms.setSpeedCntrlGain(0.3f);
+                    posController_arms.setSpeedCntrlGain(0.4f);
                     posController_arms.setDesiredRotation(0.0f);
 
-                    if (counter <= 150  && stop == 0) {  //100
+                    if (counter <= 85  && stop == 0) {  //100
                     counter++;
                     }
-                    else {
+                    else if (counter <= 105) {
                     stop = 1;
-                    counter = 0;
+                    counter++;
                     speedController_left.setDesiredSpeedRPS(0.0f);
                     speedController_right.setDesiredSpeedRPS(0.0f);
-                    }
+                    } else if (counter <= 125) {
+                        speedController_left.setDesiredSpeedRPS(0.4f);
+                        speedController_right.setDesiredSpeedRPS(0.4f);
+                        counter++;
+                    } else if (counter > 125) {
+                        speedController_left.setDesiredSpeedRPS(0.0f);
+                        speedController_right.setDesiredSpeedRPS(0.0f);
+                    } 
+
+                 
 
                     if (posController_arms.getRotation() >= -0.2f) {
+                        counter = 0;
                         treadster_state_actual = TREADSTER_STATE_BACKWARD;
                     }
                     //printf("%f", start_arms_rotation);
@@ -272,7 +282,7 @@ int main()
                     speedController_left.setDesiredSpeedRPS(-1.0f);
                     speedController_right.setDesiredSpeedRPS(1.0f);
 
-                    if (counter <= 100) { //60
+                    if (counter <= 50) { //60
                     counter = counter + 1;
                     }
                     else {
@@ -288,11 +298,11 @@ int main()
 
                     printf(" Going forward ");
                     enable_motors = 1;
-                    speedController_left.setDesiredSpeedRPS(1.0f);
-                    speedController_right.setDesiredSpeedRPS(-1.0f);
+                    speedController_left.setDesiredSpeedRPS(2.0f);
+                    speedController_right.setDesiredSpeedRPS(-2.0f);
 
 
-                    if (counter < 300) { //300
+                    if (counter < 162) { //300
                     counter = counter + 1;
                     }
                     else {
