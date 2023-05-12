@@ -155,7 +155,7 @@ int main()
                     posController_arms.setDesiredRotation(0.0f);
 
 
-                    if (counter <= 260) {  //140
+                    if (counter <= 250) {  //140
                     counter = counter + 1;
                     }
                     else {
@@ -191,7 +191,7 @@ int main()
                     speedController_right.setDesiredSpeedRPS(-1.0f);
                     posController_arms.setDesiredRotation(4.0f);
 
-                    if (counter <= 150) { //60
+                    if (counter <= 110) { //60
                     counter = counter + 1;
                     }
                     else {
@@ -219,10 +219,10 @@ int main()
                 case TREADSTER_STATE_FORWARD_TINY:
 
                     
-                    speedController_left.setDesiredSpeedRPS(0.8f);
-                    speedController_right.setDesiredSpeedRPS(-0.8f);
+                    speedController_left.setDesiredSpeedRPS(1.4f);
+                    speedController_right.setDesiredSpeedRPS(-1.4f);
 
-                    if (counter <= 150) {
+                    if (counter <= 80) {
                     counter = counter + 1;
                     }
                     else {
@@ -240,15 +240,15 @@ int main()
 
 
                     if (stop == 0) {
-                        speedController_left.setDesiredSpeedRPS(0.8f);
-                        speedController_right.setDesiredSpeedRPS(-0.8f); 
+                        speedController_left.setDesiredSpeedRPS(1.5f);
+                        speedController_right.setDesiredSpeedRPS(-1.5f); 
                     }
 
 
                     posController_arms.setSpeedCntrlGain(0.4f);
                     posController_arms.setDesiredRotation(0.0f);
 
-                    if (counter <= 85  && stop == 0) {  //100
+                    if (counter <= 40  && stop == 0) {  //100
                     counter++;
                     }
                     else if (counter <= 105) {
@@ -257,8 +257,8 @@ int main()
                     speedController_left.setDesiredSpeedRPS(0.0f);
                     speedController_right.setDesiredSpeedRPS(0.0f);
                     } else if (counter <= 125) {
-                        speedController_left.setDesiredSpeedRPS(0.4f);
-                        speedController_right.setDesiredSpeedRPS(0.4f);
+                        speedController_left.setDesiredSpeedRPS(0.0f);
+                        speedController_right.setDesiredSpeedRPS(-0.0f);
                         counter++;
                     } else if (counter > 125) {
                         speedController_left.setDesiredSpeedRPS(0.0f);
@@ -282,7 +282,7 @@ int main()
                     speedController_left.setDesiredSpeedRPS(-1.0f);
                     speedController_right.setDesiredSpeedRPS(1.0f);
 
-                    if (counter <= 50) { //60
+                    if (counter <= 60) { //60
                     counter = counter + 1;
                     }
                     else {
@@ -302,7 +302,7 @@ int main()
                     speedController_right.setDesiredSpeedRPS(-2.0f);
 
 
-                    if (counter < 162) { //300
+                    if (counter < 140) { //300
                     counter = counter + 1;
                     }
                     else {
